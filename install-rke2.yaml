@@ -1,0 +1,104 @@
+- name: Setup RKE2
+  hosts: all
+  become: yes
+  collections:
+    - community.kubernetes
+  tasks:
+    - name: Install master node
+      ansible.builtin.shell: curl -sfL https://get.rke2.io | sh -
+      when: inventory_hostname in groups['servers']
+      notify: Ensure that RKE2 server is enabled and running
+
+    - name: Force handler execution even if no change
+      meta: flush_handlers
+      when: inventory_hostname in groups['servers']
+
+    - name: Symlink kubectl
+      ansible.builtin.shell: ln -s /var/lib/rancher/rke2/bin/kubectl /usr/local/bin/
+      ignore_errors: yes
+      when: inventory_hostname in groups['servers']
+
+    - name: Fetch the server token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/rke2/server/token
+      register: rke2_token
+      when: inventory_hostname in groups['servers']
+
+    - name: Save the master token
+      ansible.builtin.set_fact:
+        token: "{{ rke2_token.content | b64decode }}"
+      when: inventory_hostname in groups['servers']
+
+    - name: Copy config file
+      ansible.builtin.copy:
+        src: /etc/rancher/rke2/rke2.yaml
+        dest: /home/johan/.kube/config
+        remote_src: yes
+        owner: johan
+        mode: 0644
+      when: inventory_hostname in groups['servers']
+
+    - name: Replace the IP with masters
+      ansible.builtin.replace:
+        path: /home/johan/.kube/config
+        regexp: "127.0.0.1"
+        replace: "{{ hostvars['server']['ansible_host'] }}"
+      when: inventory_hostname in groups['servers']
+
+    - name: Install agent nodes
+      ansible.builtin.shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+      when: inventory_hostname in groups['agents']
+      notify: Ensure that RKE2 agent is enabled and running
+
+    - name: Configure RKE2 agents
+      ansible.builtin.copy:
+        content: |
+          server: https://{{ hostvars['server']['ansible_host'] }}:9345
+          token: {{ hostvars['server'].token }}
+        dest: /etc/rancher/rke2/config.yaml
+      when: inventory_hostname in groups['agents']
+
+    # - name: Install helm
+    # rename it to argocd...
+    - name: Add ArgoCD Helm repository
+      community.kubernetes.helm_repository:
+        name: argo
+        repo_url: https://argoproj.github.io/argo-helm
+        state: present
+      when: inventory_hostname in groups['servers']
+
+    - name: Install ArgoCD using Helm
+      community.kubernetes.helm:
+        name: argo-cd
+        chart_ref: argo/argo-cd
+        namespace: argocd
+        release_namespace: argocd
+        create_namespace: yes
+        # values:
+        #   - server.ingress.enabled=true
+        #   - server.ingress.hosts[0]=argocd.example.com
+        state: present
+        kubeconfig: /home/johan/.kube/config
+      when: inventory_hostname in groups['servers']
+
+    # - name: Wait for ArgoCD pods to be ready
+    #   community.kubernetes.k8s_facts:
+    #     kubeconfig: /home/johan/.kube/config
+    #   register: argo_pods
+
+    # - name: Print ArgoCD pod details
+    #   ansible.builtin.debug:
+    #     var: argo_pods
+
+  handlers:
+    - name: Ensure that RKE2 server is enabled and running
+      ansible.builtin.systemd:
+        name: rke2-server
+        state: started
+        enabled: yes
+
+    - name: Ensure that RKE2 agent is enabled and running
+      ansible.builtin.systemd:
+        name: rke2-agent
+        state: started
+        enabled: yes
