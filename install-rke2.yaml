@@ -23,11 +23,13 @@
         src: /var/lib/rancher/rke2/server/token
       register: rke2_token
       when: inventory_hostname in groups['servers']
+      no_log: yes
 
     - name: Save the master token
       ansible.builtin.set_fact:
         token: "{{ rke2_token.content | b64decode }}"
       when: inventory_hostname in groups['servers']
+      no_log: yes
 
     - name: Copy config file
       ansible.builtin.copy:
@@ -37,6 +39,7 @@
         owner: johan
         mode: 0644
       when: inventory_hostname in groups['servers']
+      no_log: yes
 
     - name: Replace the IP with masters
       ansible.builtin.replace:
@@ -57,6 +60,7 @@
           token: {{ hostvars['server'].token }}
         dest: /etc/rancher/rke2/config.yaml
       when: inventory_hostname in groups['agents']
+      no_log: yes
 
     # - name: Install helm
     # rename it to argocd...
