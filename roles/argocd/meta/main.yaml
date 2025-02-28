@@ -1,0 +1,10 @@
+# ---
+# dependencies:
+#   - role: kubernetes
+#     version: ">=1.0.0"
+#   - role: helm
+#     version: ">=3.0.0"
+
+# # author: "7uu13"
+# description: "Installs ArgoCD using Helm on Kubernetes via Ansible."
+# license: ""

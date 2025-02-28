@@ -3,7 +3,10 @@
   hosts: servers
   become: true
   roles:
-    - rke2_master
+    #- rke2_master
+    - argocd
+  tags:
+    - master
 
 - name: Setup RKE2 (agent nodes)
   hosts: agents
@@ -12,35 +15,3 @@
     - rke2_agent
   tags:
     - agent
-
-    # - name: Install helm
-    # rename it to argocd...
-    # - name: Add ArgoCD Helm repository
-    #   community.kubernetes.helm_repository:
-    #     name: argo
-    #     repo_url: https://argoproj.github.io/argo-helm
-    #     state: present
-    #   when: inventory_hostname in groups['servers']
-
-    # - name: Install ArgoCD using Helm
-    #   community.kubernetes.helm:
-    #     name: argo-cd
-    #     chart_ref: argo/argo-cd
-    #     namespace: argocd
-    #     release_namespace: argocd
-    #     create_namespace: true
-    #     # values:
-    #     #   - server.ingress.enabled=true
-    #     #   - server.ingress.hosts[0]=argocd.example.com
-    #     state: present
-    #     kubeconfig: /home/johan/.kube/config
-    #   when: inventory_hostname in groups['servers']
-
-    # - name: Wait for ArgoCD pods to be ready
-    #   community.kubernetes.k8s_facts:
-    #     kubeconfig: /home/johan/.kube/config
-    #   register: argo_pods
-
-    # - name: Print ArgoCD pod details
-    #   ansible.builtin.debug:
-    #     var: argo_pods

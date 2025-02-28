@@ -1,0 +1,7 @@
+---
+# Default values for ArgoCD role
+
+argocd_namespace: "argocd"
+argocd_helm_chart: "argo/argo-cd"
+argocd_helm_repo_url: "https://argoproj.github.io/argo-helm"
+argocd_kubeconfig_path: "/home/johan/.kube/config"

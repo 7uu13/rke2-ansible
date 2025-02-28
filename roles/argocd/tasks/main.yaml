@@ -1,0 +1,28 @@
+---
+- name: Add ArgoCD Helm repository
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: "{{ argocd_helm_repo_url }}"
+    state: present
+
+- name: Install ArgoCD using Helm
+  kubernetes.core.helm:
+    name: "{{ argocd_namespace }}"
+    chart_ref: "{{ argocd_helm_chart }}"
+    namespace: "{{ argocd_namespace }}"
+    create_namespace: true
+    values:
+      server.insecure: true
+    state: present
+    kubeconfig: "{{ argocd_kubeconfig_path }}"
+
+- name: Estonian handicraft
+  ansible.builtin.shell: |
+    kubectl patch configmap argocd-cmd-params-cm -n argocd -p '{"data": {"server.insecure": "true"}}'
+  become_user: johan
+
+- name: Estonian handicraft vol. 2
+  ansible.builtin.shell: |
+    kubectl rollout restart deployment argocd-server -n argocd
+  become_user: johan
+
