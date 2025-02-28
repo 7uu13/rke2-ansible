@@ -1,0 +1,26 @@
+---
+- name: Install RKE2 agent node
+  ansible.builtin.get_url:
+    url: https://get.rke2.io
+    dest: "{{ rke2_install_file }}"
+    owner: johan
+    group: root
+    mode: '0755'
+
+- name: Run RKE2 Agent installation script
+  ansible.builtin.command: "{{ rke2_install_file }}"
+  changed_when: false
+  environment:
+    INSTALL_RKE2_TYPE: "agent"
+  notify: Ensure that RKE2 agent is enabled and running
+
+- name: Configure RKE2 agents
+  ansible.builtin.copy:
+    content: |
+      server: https://{{ hostvars['server']['ansible_host'] }}:9345
+      token: {{ hostvars['server'].token }}
+    dest: "{{ rke2_config_dir }}/config.yaml"
+    owner: johan
+    group: root
+    mode: '0644'
+  no_log: true

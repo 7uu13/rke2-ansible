@@ -1,0 +1,6 @@
+---
+- name: Ensure that RKE2 agent is enabled and running
+  ansible.builtin.systemd:
+    name: rke2-agent
+    state: started
+    enabled: true

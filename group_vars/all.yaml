@@ -1,0 +1,7 @@
+rke2_install_file: /opt/rke2-install.sh
+rke2_data_dir: /var/lib/rancher/rke2
+
+rke2_config_dir: /etc/rancher/rke2
+rke2_config_file: /etc/rancher/rke2/rke2.yaml
+
+kube_config_file: /home/johan/.kube/config

@@ -1,0 +1,6 @@
+---
+- name: Ensure that RKE2 server is enabled and running
+  ansible.builtin.systemd:
+    name: rke2-server
+    state: started
+    enabled: true

@@ -1,0 +1,50 @@
+---
+- name: Install RKE2 on master node
+  ansible.builtin.get_url:
+    url: https://get.rke2.io
+    dest: "{{ rke2_install_file }}"
+    owner: johan
+    group: root
+    mode: '0755'
+
+- name: Run RKE2 installation script
+  ansible.builtin.command: "{{ rke2_install_file }}"
+  changed_when: false
+  notify: Ensure that RKE2 server is enabled and running
+
+- name: Force handler execution even if no change
+  ansible.builtin.meta: flush_handlers
+
+- name: Create a symbolic link for kubectl
+  ansible.builtin.file:
+    src: "{{ rke2_data_dir }}/bin/kubectl"
+    dest: /usr/local/bin/
+    owner: johan
+    group: root
+
+- name: Fetch the server token
+  ansible.builtin.slurp:
+    src: "{{ rke2_data_dir }}/server/token"
+  register: rke2_token
+  no_log: true
+
+- name: Save the master token
+  ansible.builtin.set_fact:
+    token: "{{ rke2_token.content | b64decode }}"
+  no_log: true
+
+- name: Copy config file
+  ansible.builtin.copy:
+    src: "{{ rke2_config_file }}"
+    dest: "{{ kube_config_file }}"
+    remote_src: true
+    owner: johan
+    group: root
+    mode: '0644'
+  no_log: true
+
+- name: Replace the master ip
+  ansible.builtin.replace:
+    path: "{{ kube_config_file }}"
+    regexp: "127.0.0.1"
+    replace: "{{ hostvars['server']['ansible_host'] }}"
