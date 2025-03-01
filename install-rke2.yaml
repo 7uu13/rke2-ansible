@@ -3,7 +3,7 @@
   hosts: servers
   become: true
   roles:
-    #- rke2_master
+    - rke2_master
     - argocd
   tags:
     - master

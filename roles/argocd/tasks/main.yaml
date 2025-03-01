@@ -1,4 +1,16 @@
 ---
+- name: Install pip
+  ansible.builtin.dnf:
+    name:
+      - python3-pip
+    state: present
+
+- name: Install kubernetes Python package
+  ansible.builtin.pip:
+    name: kubernetes
+    state: present
+    executable: /usr/bin/pip3
+
 - name: Add ArgoCD Helm repository
   kubernetes.core.helm_repository:
     name: argo
@@ -12,17 +24,39 @@
     namespace: "{{ argocd_namespace }}"
     create_namespace: true
     values:
-      server.insecure: true
+      configs:
+        params:
+          server.insecure: true
     state: present
     kubeconfig: "{{ argocd_kubeconfig_path }}"
 
-- name: Estonian handicraft
-  ansible.builtin.shell: |
-    kubectl patch configmap argocd-cmd-params-cm -n argocd -p '{"data": {"server.insecure": "true"}}'
-  become_user: johan
-
-- name: Estonian handicraft vol. 2
-  ansible.builtin.shell: |
-    kubectl rollout restart deployment argocd-server -n argocd
-  become_user: johan
-
+# - name: Deploy argocd app of apps
+#   ansible.builtin.k8s:
+#     state: present
+#     kubeconfig: "{{ argocd_kubeconfig_path }}"
+#     definition:
+#       apiVersion: argoproj.io/v1alpha1
+#       kind: Application
+#       metadata:
+#         name: apps
+#         namespace: argocd
+#         finalizers:
+#           - resources-finalizer.argocd.argoproj.io
+#       spec:
+#         project: default
+#         source:
+#           repoURL: https://github.com/7uu13/argocd.git
+#           targetRevision: HEAD
+#           path: apps
+#         destination:
+#           server: https://kubernetes.default.svc
+#         syncPolicy:
+#           automated:
+#             prune: true
+#             selfHeal: true
+#             allowEmpty: true
+#           syncOptions:
+#             - Validate=true
+#             - CreateNamespace=true
+#             - PrunePropagationPolicy=foreground
+#             - PruneLast=true
