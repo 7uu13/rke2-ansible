@@ -1,7 +1,13 @@
 ---
+- name: Initialize nodes
+  hosts: all
+  roles:
+    - init
+  tags:
+    - init
+
 - name: Setup RKE2 (master node)
   hosts: servers
-  become: true
   roles:
     - rke2_master
     - argocd
@@ -10,7 +16,6 @@
 
 - name: Setup RKE2 (agent nodes)
   hosts: agents
-  become: true
   roles:
     - rke2_agent
   tags:
